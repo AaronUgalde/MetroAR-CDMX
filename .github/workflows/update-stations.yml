@@ -1,0 +1,36 @@
+name: Actualizar estaciones (GTFS)
+
+# Revisa el GTFS de la CDMX cada mes y abre un PR si cambió stations.json.
+on:
+  schedule:
+    - cron: "0 9 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/build-stations.mjs
+      - name: Ignorar si solo cambió la fecha de versión
+        id: diff
+        run: |
+          if git diff --quiet -I '"version"' -- app/src/main/assets/stations.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: data/gtfs-update
+          title: "Datos: actualizar estaciones desde el GTFS de la CDMX"
+          commit-message: "Actualizar stations.json desde el GTFS de la CDMX"
+          body: "Generado por `tools/build-stations.mjs`. Revisa una muestra de coordenadas contra el mapa antes de fusionar."
