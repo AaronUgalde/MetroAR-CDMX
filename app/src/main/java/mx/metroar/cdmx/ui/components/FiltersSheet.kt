@@ -40,6 +40,7 @@ import mx.metroar.cdmx.R
 import mx.metroar.cdmx.domain.model.Favorite
 import mx.metroar.cdmx.domain.model.Line
 import mx.metroar.cdmx.domain.model.Station
+import mx.metroar.cdmx.domain.model.TransportSystem
 import mx.metroar.cdmx.domain.repository.DistanceUnits
 import kotlin.math.roundToInt
 
@@ -51,6 +52,7 @@ const val MAX_RADIUS_M = 5000
 fun FiltersSheet(
     lines: List<Line>,
     selectedLines: Set<String>,
+    enabledSystems: Set<TransportSystem>,
     radiusM: Int,
     units: DistanceUnits,
     favorites: List<Favorite>,
@@ -91,19 +93,26 @@ fun FiltersSheet(
                 if (selectedLines.isNotEmpty()) TextButton(onClick = onClearLines) { Text(stringResource(R.string.all_lines)) }
             }
             Text(
-                stringResource(R.string.transport_metro_only),
+                stringResource(R.string.filters_systems_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(8.dp))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                lines.forEach { line ->
-                    FilterChip(
-                        selected = line.id in selectedLines,
-                        onClick = { onToggleLine(line.id) },
-                        label = { Text(line.name) },
-                        leadingIcon = { LineBadge(line, size = 22.dp) },
-                    )
+            lines.filter { it.system in enabledSystems }.groupBy { it.system }.forEach { (system, systemLines) ->
+                Row(Modifier.padding(top = 12.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    SystemIcon(system, tint = MaterialTheme.colorScheme.onSurfaceVariant, size = 18.dp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(system.labelRes), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    systemLines.forEach { line ->
+                        FilterChip(
+                            selected = line.id in selectedLines,
+                            onClick = { onToggleLine(line.id) },
+                            // Dentro de su grupo basta "Línea 3"; el sistema ya está en el encabezado.
+                            label = { Text(if (system == TransportSystem.Metro || systemLines.size == 1) line.name else stringResource(R.string.line_n, line.shortName)) },
+                            leadingIcon = { LineBadge(line, size = 22.dp) },
+                        )
+                    }
                 }
             }
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
@@ -129,6 +138,8 @@ fun FiltersSheet(
                 ) {
                     Icon(Icons.Filled.Star, null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(10.dp))
+                    SystemIcon(station.system, tint = MaterialTheme.colorScheme.onSurfaceVariant, size = 16.dp)
+                    Spacer(Modifier.width(6.dp))
                     Text(fav.label, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
                     station.lines.forEach { LineBadge(it, size = 22.dp, modifier = Modifier.padding(start = 2.dp)) }
                 }

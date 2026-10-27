@@ -21,9 +21,11 @@ class ProjectToScreenTest {
     }
 
     @Test
-    fun `estacion en el borde del FOV queda en el borde de la pantalla`() {
+    fun `estacion en el borde del FOV queda pegada al borde pero completa`() {
         val frame = project(listOf(nearby("a", 30.0, 300.0)), heading = 0.0, elevation = 0.0, fov, vp, 1500.0)
-        assertEquals(1000f, frame.markers[0].x, 0.5f)
+        val m = frame.markers[0]
+        // Medio marcador (100 px a escala 1) de margen: no se corta.
+        assertEquals(1000f - 100f * m.scale, m.x, 0.5f)
         val left = project(listOf(nearby("b", 345.0, 300.0)), heading = 0.0, elevation = 0.0, fov, vp, 1500.0)
         assertEquals(250f, left.markers[0].x, 0.5f)
     }

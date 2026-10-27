@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.TransferWithinAStation
 import androidx.compose.material.icons.outlined.MeetingRoom
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import mx.metroar.cdmx.R
 import mx.metroar.cdmx.domain.geo.GeoMath
 import mx.metroar.cdmx.domain.model.Station
+import mx.metroar.cdmx.domain.model.TransportSystem
 import mx.metroar.cdmx.domain.repository.DistanceUnits
 import mx.metroar.cdmx.domain.usecase.NearbyStation
 
@@ -58,6 +62,9 @@ fun StationSheet(
     onNavigate: () -> Unit,
     onOpenMaps: () -> Unit,
     onToggleFavorite: () -> Unit,
+    /** Estaciones de otros sistemas cerca de esta, con su distancia en metros. */
+    connections: List<Pair<Station, Double>> = emptyList(),
+    onStationClick: (String) -> Unit = {},
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(
@@ -82,6 +89,16 @@ fun StationSheet(
                         tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SystemIcon(station.system, tint = MaterialTheme.colorScheme.primary, size = 18.dp)
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    stringResource(station.system.labelRes),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
             if (nearby != null) {
                 val dir = if (heading.isNaN()) "" else " · " + directionText(GeoMath.relativeAngle(nearby.bearing, heading))
@@ -112,6 +129,35 @@ fun StationSheet(
                 if (station.transfers.isEmpty()) stringResource(R.string.no_transfers)
                 else stringResource(R.string.transfer_lines, station.lines.joinToString(", ") { it.shortName }),
             )
+            if (connections.isNotEmpty()) {
+                Row(Modifier.padding(vertical = 6.dp)) {
+                    Icon(Icons.Filled.TransferWithinAStation, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(stringResource(R.string.connections), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                        connections.take(MAX_CONNECTIONS).forEach { (other, meters) ->
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable(role = Role.Button) { onStationClick(other.id) }
+                                    .padding(vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                SystemIcon(other.system, tint = MaterialTheme.colorScheme.onSurfaceVariant, size = 18.dp)
+                                Spacer(Modifier.width(6.dp))
+                                other.lines.forEach { LineBadge(it, size = 22.dp, modifier = Modifier.padding(end = 2.dp)) }
+                                Spacer(Modifier.width(6.dp))
+                                Text(stationTitle(other), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    stringResource(R.string.walk_meters, Format.distance(meters, units)),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             InfoRow(
                 Icons.Filled.Accessible,
                 stringResource(R.string.accessibility),
@@ -123,7 +169,11 @@ fun StationSheet(
                 if (station.entrances.isEmpty()) stringResource(R.string.entrances_soon)
                 else station.entrances.joinToString("\n") { it.name },
             )
-            InfoRow(Icons.Filled.Schedule, stringResource(R.string.schedule), stringResource(R.string.schedule_general))
+            InfoRow(
+                Icons.Filled.Schedule,
+                stringResource(R.string.schedule),
+                stringResource(if (station.system == TransportSystem.Metro) R.string.schedule_metro else R.string.schedule_check_official),
+            )
 
             Spacer(Modifier.height(16.dp))
             Button(onClick = onNavigate, modifier = Modifier.fillMaxWidth().height(52.dp)) {
@@ -160,3 +210,4 @@ private fun InfoRow(icon: ImageVector, title: String, body: String) {
     }
 }
 
+private const val MAX_CONNECTIONS = 4

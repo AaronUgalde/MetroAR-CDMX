@@ -72,6 +72,7 @@ fun MetroArRoot(viewModel: MainViewModel) {
             SettingsScreen(
                 settings = state.settings,
                 onUpdate = { viewModel.updateSettings(it) },
+                onToggleSystem = { viewModel.toggleSystem(it) },
                 onCalibrate = { forceCalibration = true; screen = Screen.Main },
                 onShowIntro = { replayIntro = true; screen = Screen.Main },
                 onBack = { screen = Screen.Main },

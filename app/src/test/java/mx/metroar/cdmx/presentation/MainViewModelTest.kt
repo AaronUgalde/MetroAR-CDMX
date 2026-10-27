@@ -16,6 +16,7 @@ import mx.metroar.cdmx.domain.model.DeviceOrientation
 import mx.metroar.cdmx.domain.model.Favorite
 import mx.metroar.cdmx.domain.model.Line
 import mx.metroar.cdmx.domain.model.SensorAccuracy
+import mx.metroar.cdmx.domain.model.TransportSystem
 import mx.metroar.cdmx.domain.model.UserLocation
 import mx.metroar.cdmx.domain.repository.FavoritesRepository
 import mx.metroar.cdmx.domain.repository.LocationProvider
@@ -44,7 +45,7 @@ class MainViewModelTest {
 
     private val repo = object : StationRepository {
         override suspend fun stations() = listOf(north, east, far)
-        override suspend fun lines() = emptyList<Line>()
+        override suspend fun lines() = listOf(TestData.line2, TestData.mb1)
     }
     private val locationProvider = object : LocationProvider {
         override fun locations(lowPower: Flow<Boolean>) = locations
@@ -139,6 +140,23 @@ class MainViewModelTest {
             locations.emit(UserLocation(GeoMath.destination(origin, 0.0, 290.0), 5f, 1_000))
             val there = awaitItemWhere { it.navigation?.arrived == true }
             assertEquals("norte", there.navigation!!.target.id)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `apagar un sistema quita sus lineas del filtro y nunca deja cero sistemas`() = runTest {
+        settings.state.value = settings.state.value.copy(
+            enabledSystems = setOf(TransportSystem.Metro, TransportSystem.Metrobus),
+            lineFilter = setOf("metro-2", "mb-1"),
+        )
+        vm.uiState.test {
+            awaitItemWhere { it.lines.isNotEmpty() }
+            vm.toggleSystem(TransportSystem.Metrobus).join()
+            assertEquals(setOf(TransportSystem.Metro), settings.state.value.enabledSystems)
+            assertEquals(setOf("metro-2"), settings.state.value.lineFilter)
+            vm.toggleSystem(TransportSystem.Metro).join()
+            assertEquals(setOf(TransportSystem.Metro), settings.state.value.enabledSystems)
             cancelAndIgnoreRemainingEvents()
         }
     }

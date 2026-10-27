@@ -43,7 +43,9 @@ import mx.metroar.cdmx.domain.usecase.EdgeSide
 import mx.metroar.cdmx.domain.usecase.ScreenMarker
 import mx.metroar.cdmx.ui.components.Format
 import mx.metroar.cdmx.ui.components.LineBadge
+import mx.metroar.cdmx.ui.components.SystemIcon
 import mx.metroar.cdmx.ui.components.directionText
+import mx.metroar.cdmx.ui.components.stationTitle
 
 /** Tamaño de referencia del marcador (escala 1.0); el ViewModel lo usa para evitar encimados. */
 val MarkerWidth = 230.dp
@@ -85,9 +87,9 @@ private fun StationMarker(marker: ScreenMarker, units: DistanceUnits, onClick: (
     val n = marker.nearby
     val distance = Format.distance(n.distanceM, units)
     val minutes = stringResource(R.string.minutes_short, n.walkingMinutes)
-    val lines = n.station.lines.joinToString(", ") { it.shortName }
+    val lines = n.station.lines.joinToString(", ") { it.name }
     val description = stringResource(
-        R.string.marker_a11y, n.station.name, lines, distance, n.walkingMinutes, directionText(marker.relativeAngle),
+        R.string.marker_a11y, stationTitle(n.station), lines, distance, n.walkingMinutes, directionText(marker.relativeAngle),
     )
     Row(
         modifier = Modifier
@@ -110,6 +112,7 @@ private fun StationMarker(marker: ScreenMarker, units: DistanceUnits, onClick: (
         Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f, fill = false)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                SystemIcon(n.station.system, tint = Color(0xFF444444), size = 15.dp, modifier = Modifier.padding(end = 3.dp))
                 Text(
                     n.station.name,
                     color = Color(0xFF111111),
@@ -154,7 +157,7 @@ private fun EdgeArrow(edge: EdgeIndicator, units: DistanceUnits, onClick: (Strin
     val n = edge.nearby
     val left = edge.side == EdgeSide.Left
     val distance = Format.distance(n.distanceM, units)
-    val description = stringResource(R.string.edge_a11y, n.station.name, distance, directionText(edge.relativeAngle))
+    val description = stringResource(R.string.edge_a11y, stationTitle(n.station), distance, directionText(edge.relativeAngle))
     Row(
         modifier = Modifier
             .background(Color.Black.copy(alpha = 0.62f), RoundedCornerShape(50))

@@ -5,6 +5,7 @@ import mx.metroar.cdmx.domain.model.DeviceOrientation
 import mx.metroar.cdmx.domain.model.Favorite
 import mx.metroar.cdmx.domain.model.Line
 import mx.metroar.cdmx.domain.model.Station
+import mx.metroar.cdmx.domain.model.TransportSystem
 import mx.metroar.cdmx.domain.model.UserLocation
 
 interface StationRepository {
@@ -40,6 +41,7 @@ data class UserSettings(
     val radiusM: Int = 1500,
     val units: DistanceUnits = DistanceUnits.Metric,
     val lineFilter: Set<String> = emptySet(),
+    val enabledSystems: Set<TransportSystem> = TransportSystem.DEFAULT_ENABLED,
     val onboardingDone: Boolean = false,
     val autoMapWhenFlat: Boolean = true,
 )

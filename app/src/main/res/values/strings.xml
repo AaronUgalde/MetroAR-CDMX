@@ -35,7 +35,7 @@
     <string name="auto_map_hint">Teléfono acostado: vista de mapa. Levántalo para ver la cámara.</string>
     <string name="need_location">Necesitamos tu ubicación para encontrar estaciones cercanas.</string>
     <string name="locating">Buscando tu ubicación…</string>
-    <string name="none_in_radius">No hay estaciones de Metro a menos de %1$s. Amplía el radio con el botón de abajo.</string>
+    <string name="none_in_radius">No hay estaciones a menos de %1$s. Amplía el radio con el botón de abajo.</string>
     <string name="view_camera">Cámara</string>
     <string name="view_map">Mapa</string>
     <string name="recenter">Centrar en mi posición</string>
@@ -55,7 +55,7 @@
     <string name="line_n">Línea %1$s</string>
     <string name="minutes_short">%1$d min</string>
     <string name="minutes_walking">%1$d min caminando</string>
-    <string name="marker_a11y">Estación %1$s, línea %2$s, %3$s, %4$d minutos caminando, %5$s</string>
+    <string name="marker_a11y">Estación %1$s, %2$s, %3$s, %4$d minutos caminando, %5$s</string>
     <string name="edge_a11y">Estación %1$s, %2$s, %3$s</string>
 
     <!-- Brújula -->
@@ -73,7 +73,10 @@
     <string name="entrances">Accesos</string>
     <string name="entrances_soon">La ubicación de cada acceso llegará en una próxima versión; la flecha apunta al centro de la estación.</string>
     <string name="schedule">Horario general</string>
-    <string name="schedule_general">Lun a vie 5:00–24:00 · Sáb 6:00–24:00 · Dom y festivos 7:00–24:00</string>
+    <string name="schedule_metro">Lun a vie 5:00–24:00 · Sáb 6:00–24:00 · Dom y festivos 7:00–24:00</string>
+    <string name="schedule_check_official">Consulta el horario oficial de este sistema; puede variar por línea y día.</string>
+    <string name="connections">Conexiones con otros sistemas</string>
+    <string name="walk_meters">%1$s a pie</string>
     <string name="take_me_there">Llévame ahí</string>
     <string name="favorite">Favorito</string>
     <string name="favorite_add">Agregar a favoritos</string>
@@ -91,7 +94,7 @@
     <string name="search_radius">Radio de búsqueda</string>
     <string name="filter_lines">Líneas</string>
     <string name="all_lines">Todas</string>
-    <string name="transport_metro_only">Por ahora solo Metro. Metrobús, Tren Ligero, Cablebús y Trolebús llegarán después.</string>
+    <string name="filters_systems_hint">Activa o apaga sistemas de transporte en Ajustes.</string>
     <string name="favorites">Favoritos</string>
     <string name="favorites_empty">Marca estaciones con la estrella (casa, trabajo…) para tenerlas a la mano.</string>
 
@@ -105,14 +108,20 @@
     <string name="auto_map">Cambiar a mapa al acostar el teléfono</string>
     <string name="transport_types">Tipos de transporte</string>
     <string name="system_metro">Metro</string>
-    <string name="transport_soon">Otros sistemas: próximamente.</string>
+    <string name="system_metrobus">Metrobús</string>
+    <string name="system_tren_ligero">Tren Ligero</string>
+    <string name="system_cablebus">Cablebús</string>
+    <string name="system_suburbano">Tren Suburbano</string>
+    <string name="system_interurbano">Tren El Insurgente</string>
+    <string name="system_trolebus">Trolebús</string>
+    <string name="trolebus_hint">Más de 500 paradas: puede saturar la vista de cámara.</string>
     <string name="calibrate_compass">Calibrar brújula</string>
     <string name="language">Idioma</string>
     <string name="language_body">Español. El soporte para inglés llegará en la siguiente versión.</string>
     <string name="privacy">Privacidad</string>
     <string name="privacy_long">La app solo usa la cámara y la ubicación mientras está abierta. Todo el cálculo ocurre en el dispositivo: tu ubicación no se envía ni se guarda fuera del teléfono y las imágenes de la cámara no se graban. No hay analítica.</string>
     <string name="credits">Créditos de datos</string>
-    <string name="credits_body">Estaciones, líneas y colores: GTFS estático del Portal de Datos Abiertos de la Ciudad de México (datos.cdmx.gob.mx). Horarios generales publicados por el STC. Los datos pueden contener errores; verifica en sitio.</string>
+    <string name="credits_body">Estaciones, líneas y colores: GTFS estático del Portal de Datos Abiertos de la Ciudad de México (datos.cdmx.gob.mx). Horario general del Metro publicado por el STC. Los datos pueden contener errores; verifica en sitio.</string>
     <string name="show_intro">Ver la introducción otra vez</string>
     <string name="version_disclaimer">MetroAR CDMX 1.0 · Proyecto independiente, sin relación con el Sistema de Transporte Colectivo.</string>
 </resources>

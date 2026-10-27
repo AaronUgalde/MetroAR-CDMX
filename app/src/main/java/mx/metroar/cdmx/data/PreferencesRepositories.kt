@@ -15,6 +15,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import mx.metroar.cdmx.domain.model.Favorite
+import mx.metroar.cdmx.domain.model.TransportSystem
 import mx.metroar.cdmx.domain.repository.DistanceUnits
 import mx.metroar.cdmx.domain.repository.FavoritesRepository
 import mx.metroar.cdmx.domain.repository.SettingsRepository
@@ -27,6 +28,7 @@ class DataStoreSettingsRepository(private val store: DataStore<Preferences>) : S
         val radius = intPreferencesKey("radius_m")
         val units = stringPreferencesKey("units")
         val lines = stringSetPreferencesKey("line_filter")
+        val systems = stringSetPreferencesKey("enabled_systems")
         val onboarding = booleanPreferencesKey("onboarding_done")
         val autoMap = booleanPreferencesKey("auto_map_when_flat")
     }
@@ -39,6 +41,10 @@ class DataStoreSettingsRepository(private val store: DataStore<Preferences>) : S
             radiusM = this[Keys.radius] ?: d.radiusM,
             units = this[Keys.units]?.let { runCatching { DistanceUnits.valueOf(it) }.getOrNull() } ?: d.units,
             lineFilter = this[Keys.lines] ?: d.lineFilter,
+            enabledSystems = this[Keys.systems]
+                ?.mapNotNull { name -> TransportSystem.entries.firstOrNull { it.name == name } }
+                ?.toSet()
+                ?: d.enabledSystems,
             onboardingDone = this[Keys.onboarding] ?: d.onboardingDone,
             autoMapWhenFlat = this[Keys.autoMap] ?: d.autoMapWhenFlat,
         )
@@ -50,6 +56,7 @@ class DataStoreSettingsRepository(private val store: DataStore<Preferences>) : S
             p[Keys.radius] = next.radiusM
             p[Keys.units] = next.units.name
             p[Keys.lines] = next.lineFilter
+            p[Keys.systems] = next.enabledSystems.map { it.name }.toSet()
             p[Keys.onboarding] = next.onboardingDone
             p[Keys.autoMap] = next.autoMapWhenFlat
         }

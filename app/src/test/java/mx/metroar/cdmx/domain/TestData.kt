@@ -12,9 +12,10 @@ object TestData {
 
     val line1 = Line("metro-1", "Línea 1", "1", 0xFFF94F8E, 0xFFFFFFFF, TransportSystem.Metro, "", emptyList())
     val line2 = Line("metro-2", "Línea 2", "2", 0xFF0071C1, 0xFFFFFFFF, TransportSystem.Metro, "", emptyList())
+    val mb1 = Line("mb-1", "Metrobús Línea 1", "1", 0xFFD40D0D, 0xFFFFFFFF, TransportSystem.Metrobus, "", emptyList())
 
     fun station(id: String, at: GeoPoint, vararg lines: Line = arrayOf(line2)) =
-        Station(id, id, at.lat, at.lon, lines.toList(), accessible = false, entrances = emptyList())
+        Station(id, id, lines.first().system, at.lat, at.lon, lines.toList(), accessible = false, entrances = emptyList())
 
     /** Estación a [meters] del origen con rumbo [bearing]. */
     fun nearby(id: String, bearing: Double, meters: Double): NearbyStation {

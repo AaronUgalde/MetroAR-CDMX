@@ -64,11 +64,11 @@ import mx.metroar.cdmx.R
 import mx.metroar.cdmx.domain.geo.GeoMath
 import mx.metroar.cdmx.domain.model.SensorAccuracy
 import mx.metroar.cdmx.domain.model.Station
+import mx.metroar.cdmx.domain.model.TransportSystem
 import mx.metroar.cdmx.domain.usecase.DescribeDirection
 import mx.metroar.cdmx.domain.usecase.FieldOfView
 import mx.metroar.cdmx.domain.usecase.NearbyStation
 import mx.metroar.cdmx.domain.usecase.ProjectToScreen
-import mx.metroar.cdmx.domain.usecase.RelativeDirection
 import mx.metroar.cdmx.presentation.MainUiState
 import mx.metroar.cdmx.presentation.MainViewModel
 import mx.metroar.cdmx.presentation.OrientationUi
@@ -88,6 +88,8 @@ import mx.metroar.cdmx.ui.components.SafetyBanner
 import mx.metroar.cdmx.ui.components.StationSheet
 import mx.metroar.cdmx.ui.components.StatusChip
 import mx.metroar.cdmx.ui.components.compassQuality
+import mx.metroar.cdmx.ui.components.directionRes
+import mx.metroar.cdmx.ui.components.labelRes
 import mx.metroar.cdmx.ui.components.gpsQuality
 import mx.metroar.cdmx.ui.map.MapCamera
 import mx.metroar.cdmx.ui.map.StationMap
@@ -167,9 +169,13 @@ fun MainScreen(
         } else {
             val user = state.location?.point
             StationMap(
-                lines = state.lines.filter { state.settings.lineFilter.isEmpty() || it.id in state.settings.lineFilter },
+                lines = state.lines.filter {
+                    it.system in state.settings.enabledSystems &&
+                        (state.settings.lineFilter.isEmpty() || it.id in state.settings.lineFilter)
+                },
                 stations = state.stations.filter { s ->
-                    state.settings.lineFilter.isEmpty() || s.lines.any { it.id in state.settings.lineFilter }
+                    s.system in state.settings.enabledSystems &&
+                        (state.settings.lineFilter.isEmpty() || s.lines.any { it.id in state.settings.lineFilter })
                 },
                 user = user,
                 userAccuracyM = state.location?.accuracyM,
@@ -298,6 +304,10 @@ fun MainScreen(
             onNavigate = { viewModel.navigateTo(station) },
             onOpenMaps = { openWalkingRoute(context, station) },
             onToggleFavorite = { viewModel.toggleFavorite(station) },
+            connections = station.connectionIds.mapNotNull { id ->
+                state.stations.firstOrNull { it.id == id }?.let { it to GeoMath.distance(station.location, it.location) }
+            },
+            onStationClick = viewModel::selectStation,
         )
     }
 
@@ -305,6 +315,7 @@ fun MainScreen(
         FiltersSheet(
             lines = state.lines,
             selectedLines = state.settings.lineFilter,
+            enabledSystems = state.settings.enabledSystems,
             radiusM = state.settings.radiusM,
             units = units,
             favorites = state.favorites,
@@ -357,18 +368,11 @@ private fun voiceText(context: Context, state: MainUiState, o: OrientationUi): S
     val nearest = state.nearby.firstOrNull() ?: return context.getString(R.string.voice_none)
     val distance = DescribeDirection.roundDistance(nearest.distanceM)
     val heading = if (state.viewMode == ViewMode.Ar) o.heading else mapHeading(o)
-    if (heading.isNaN()) return context.getString(R.string.voice_nearest_nodir, nearest.station.name, distance)
-    val dir = context.getString(
-        when (DescribeDirection.of(GeoMath.relativeAngle(nearest.bearing, heading))) {
-            RelativeDirection.Ahead -> R.string.dir_ahead
-            RelativeDirection.AheadRight -> R.string.dir_ahead_right
-            RelativeDirection.Right -> R.string.dir_right
-            RelativeDirection.Behind -> R.string.dir_behind
-            RelativeDirection.Left -> R.string.dir_left
-            RelativeDirection.AheadLeft -> R.string.dir_ahead_left
-        },
-    )
-    return context.getString(R.string.voice_nearest, nearest.station.name, distance, dir)
+    val s = nearest.station
+    val name = if (s.system == TransportSystem.Metro) s.name else context.getString(s.system.labelRes) + " " + s.name
+    if (heading.isNaN()) return context.getString(R.string.voice_nearest_nodir, name, distance)
+    val dir = context.getString(directionRes(GeoMath.relativeAngle(nearest.bearing, heading)))
+    return context.getString(R.string.voice_nearest, name, distance, dir)
 }
 
 private class Tts(context: Context) {

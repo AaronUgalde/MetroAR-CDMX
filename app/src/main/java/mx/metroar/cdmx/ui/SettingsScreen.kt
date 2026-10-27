@@ -37,11 +37,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import mx.metroar.cdmx.R
+import mx.metroar.cdmx.domain.model.TransportSystem
 import mx.metroar.cdmx.domain.repository.DistanceUnits
 import mx.metroar.cdmx.domain.repository.UserSettings
 import mx.metroar.cdmx.ui.components.Format
 import mx.metroar.cdmx.ui.components.MAX_RADIUS_M
 import mx.metroar.cdmx.ui.components.MIN_RADIUS_M
+import mx.metroar.cdmx.ui.components.SystemIcon
+import mx.metroar.cdmx.ui.components.labelRes
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +52,7 @@ import kotlin.math.roundToInt
 fun SettingsScreen(
     settings: UserSettings,
     onUpdate: ((UserSettings) -> UserSettings) -> Unit,
+    onToggleSystem: (TransportSystem) -> Unit,
     onCalibrate: () -> Unit,
     onShowIntro: () -> Unit,
     onBack: () -> Unit,
@@ -96,12 +100,30 @@ fun SettingsScreen(
             SwitchRow(stringResource(R.string.auto_map), settings.autoMapWhenFlat) { on -> onUpdate { it.copy(autoMapWhenFlat = on) } }
 
             Section(stringResource(R.string.transport_types))
-            SwitchRow(stringResource(R.string.system_metro), checked = true, enabled = false) {}
-            Text(
-                stringResource(R.string.transport_soon),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            TransportSystem.entries.forEach { system ->
+                val on = system in settings.enabledSystems
+                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    SystemIcon(system, tint = MaterialTheme.colorScheme.onSurfaceVariant, size = 20.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(system.labelRes))
+                        if (system == TransportSystem.Trolebus) {
+                            Text(
+                                stringResource(R.string.trolebus_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    // El último sistema activo no se puede apagar.
+                    Switch(
+                        checked = on,
+                        onCheckedChange = { onToggleSystem(system) },
+                        enabled = !on || settings.enabledSystems.size > 1,
+                    )
+                }
+            }
 
             Section(stringResource(R.string.compass))
             LinkRow(stringResource(R.string.calibrate_compass), onCalibrate)

@@ -91,8 +91,12 @@ class ProjectToScreen(
 
         val placed = mutableListOf<Placed>()
         for ((s, alpha) in visible) {
-            val x = (w / 2 + (alpha / halfH) * w / 2).toFloat()
             val scale = scaleFor(s.distanceM, radiusM)
+            // Cerca del borde del campo de visión se recorre hacia dentro para verse completo;
+            // se hace antes de revisar encimados para que el apilado use la posición final.
+            val halfMarker = viewport.markerWidthPx * scale / 2
+            val rawX = (w / 2 + (alpha / halfH) * w / 2).toFloat()
+            val x = if (w > 2 * halfMarker) rawX.coerceIn(halfMarker, w - halfMarker) else rawX
             val minSep = viewport.markerWidthPx * scale * 0.9f
             val level = if (placed.size >= maxMarkers) -1 else (0 until maxLevels).firstOrNull { lvl ->
                 placed.none { it.level == lvl && abs(it.x - x) < minSep }

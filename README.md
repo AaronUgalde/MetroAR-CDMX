@@ -4,7 +4,7 @@
 
 # MetroAR CDMX
 
-**Point your phone around you and see which way to walk to the nearest Mexico City Metro station.**
+**Point your phone around you and see which way to walk to the nearest Mexico City Metro, Metrobús, or train station.**
 
 Augmented reality markers float in the real direction of each station, with its official line color and number, distance, and walking time. It also works offline.
 
@@ -12,7 +12,7 @@ Augmented reality markers float in the real direction of each station, with its 
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
 ![Min SDK](https://img.shields.io/badge/minSdk-26%20(Android%208.0)-3DDC84?logo=android&logoColor=white)
-![Tests](https://img.shields.io/badge/unit%20tests-33%20passing-2EA043)
+![Tests](https://img.shields.io/badge/unit%20tests-38%20passing-2EA043)
 ![Offline](https://img.shields.io/badge/works-offline-E8590C)
 
 [Features](#features) · [Screenshots](#screenshots) · [How it works](#how-it-works) · [Getting started](#getting-started) · [Architecture](#architecture) · [Roadmap](#roadmap)
@@ -56,11 +56,16 @@ When you walk out of a museum or a meeting in a part of the city you don't know,
 - 🎨 Official line **color plus number** on every marker, so you don't need to tell colors apart.
 - 📏 Distance and walking minutes (estimated at 80 m/min), with nearer stations shown larger and more opaque.
 - ↔️ Arrows on the edges of the screen for stations behind you or off to the side.
-- 🧹 No more than 8 markers at once. Markers that would overlap are stacked or grouped as "+N".
+- 🧹 No more than 8 markers at once. Markers that would overlap are stacked or grouped as "+N", and markers near the edge slide in so they're never cut off.
+
+**Seven transit systems**
+- 🚇 **Metro**, 🚌 **Metrobús**, 🚋 **Tren Ligero**, 🚡 **Cablebús**, 🚆 **Tren Suburbano**, 🚆 **Tren El Insurgente**, and 🚎 **Trolebús**, each of which can be turned on or off in Settings. Trolebús is off by default because its 500+ stops would crowd the camera view.
+- 🔵 Metro lines use **round** badges and every other system uses **square** ones, plus a system icon, so Metro Line 1 and Metrobús Line 1 never get confused.
+- 🔁 **Connections between systems**: each station sheet lists nearby stations of other systems with the walking distance (e.g. Metro Balderas → Metrobús Balderas, 150 m).
 
 **Getting there**
 - 🧭 **Take me there**: a large arrow, remaining distance, and a vibration when you arrive.
-- 🗺️ **Offline 2D map** with the lines drawn in their colors, your position, a direction cone, and the search radius. It needs no API keys.
+- 🗺️ **Offline 2D map** with the lines drawn in their colors (Metro on top), your position, a direction cone, and the search radius. Labels never overlap, and it needs no API keys.
 - 📱 Switches to the map automatically when you lay the phone flat.
 - 🚶 Opens the walking route in Google Maps if you want turn-by-turn directions.
 
@@ -157,7 +162,7 @@ adb shell cmd location providers set-test-provider-location gps --location 19.43
 ./gradlew :app:testDebugUnitTest
 ```
 
-There are 33 unit tests covering Haversine, bearing, angle normalization, screen projection, stacking and grouping, heading smoothing, rotation matrices, FOV, the GPS filter, and the ViewModel (with fake location and orientation flows via [Turbine](https://github.com/cashapp/turbine)). One known case: from the Zócalo toward Bellas Artes, the bearing must point roughly west.
+There are 38 unit tests covering Haversine, bearing, angle normalization, screen projection, stacking and grouping, heading smoothing, rotation matrices, FOV, the GPS filter, and the ViewModel (with fake location and orientation flows via [Turbine](https://github.com/cashapp/turbine)). One known case: from the Zócalo toward Bellas Artes, the bearing must point roughly west.
 
 ## Architecture
 
@@ -219,17 +224,27 @@ tools/build-stations.mjs        # GTFS → stations.json
 | Tests | JUnit 4 · kotlinx-coroutines-test · Turbine |
 | CI/CD | GitHub Actions |
 
-> **Why no Hilt or Room?** With about 160 stations, a bundled JSON file and a linear scan are faster and simpler than a database, and manual DI keeps the build free of KSP. Migrating later is mechanical.
+> **Why no Hilt or Room?** With about 1,000 stations, a bundled JSON file (~200 KB) and a linear scan (under 1 ms, rerun only every 20 m) are faster and simpler than a database, and manual DI keeps the build free of KSP. Migrating later is mechanical.
 
 ## Data
 
-Stations, lines, and colors come from the **static GTFS** published on the [Mexico City Open Data Portal](https://datos.cdmx.gob.mx). The script keeps only Metro routes, merges same-name platforms into transfer stations, and stores the station order for each line.
+Stations, lines, and colors come from the **static GTFS** published on the [Mexico City Open Data Portal](https://datos.cdmx.gob.mx). The script picks the routes of each station-based system, merges same-name platforms into transfer stations within each system, links nearby stations of different systems (under 350 m) as connections, and stores the station order for each line. City bus networks (RTP and concessioned routes, ~9,500 stops) are left out on purpose: they would bury the camera view in markers.
 
 ```bash
 node tools/build-stations.mjs          # downloads the latest GTFS
 ```
 
-**Current dataset:** 12 lines · 163 stations · 28 transfer stations.
+**Current dataset:** 36 lines · 1,000 stations · 430 with a connection to another system.
+
+| System | Lines | Stations |
+|---|---|---|
+| Metro | 12 | 163 |
+| Metrobús | 7 | 261 |
+| Tren Ligero | 1 | 18 |
+| Cablebús | 3 | 19 |
+| Tren Suburbano | 1 | 7 |
+| Tren El Insurgente | 1 | 5 |
+| Trolebús | 11 | 527 |
 
 A [scheduled workflow](.github/workflows/update-stations.yml) re-runs the script on the 1st of each month and opens a pull request if anything changed.
 
@@ -242,7 +257,8 @@ A [scheduled workflow](.github/workflows/update-stations.yml) re-runs the script
 - [x] Voice mode, dark mode, and accessibility labels
 - [ ] Individual station entrances (navigate to the nearest entrance)
 - [ ] English translation
-- [ ] Metrobús, Tren Ligero, Cablebús, Trolebús, and Ecobici
+- [x] Metrobús, Tren Ligero, Cablebús, Tren Suburbano, Tren El Insurgente, and Trolebús
+- [ ] Ecobici bike availability (real-time GBFS feed)
 - [ ] Accessibility details (elevators, ramps, tactile guidance)
 - [ ] Service alerts and closed stations
 - [ ] Home screen widget with the nearest station

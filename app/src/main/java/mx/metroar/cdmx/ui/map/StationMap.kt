@@ -12,7 +12,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -33,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import mx.metroar.cdmx.domain.model.GeoPoint
 import mx.metroar.cdmx.domain.model.Line
 import mx.metroar.cdmx.domain.model.Station
+import mx.metroar.cdmx.domain.model.TransportSystem
 import mx.metroar.cdmx.ui.components.composeColor
 import mx.metroar.cdmx.ui.theme.UserBlue
 import kotlin.math.cos
@@ -93,8 +96,13 @@ fun StationMap(
         val proj = Projection(center, camera.metersPerPx, size, camera.pan)
         drawRect(if (dark) Color(0xFF16181C) else Color(0xFFF1EFEA))
 
-        val lineWidth = 5.px(density)
-        lines.forEach { line ->
+        // El Metro se dibuja al final para quedar encima de autobuses y trenes.
+        lines.sortedByDescending { it.system.ordinal }.forEach { line ->
+            val lineWidth = when (line.system) {
+                TransportSystem.Metro -> 5f
+                TransportSystem.Metrobus, TransportSystem.Trolebus -> 3f
+                else -> 4f
+            }.px(density)
             val path = Path()
             line.stationIds.mapNotNull { byId[it] }.forEachIndexed { i, s ->
                 val p = proj.toScreen(s.lat, s.lon)
@@ -111,20 +119,41 @@ fun StationMap(
             )
         }
 
-        val showAllLabels = camera.metersPerPx < 6f
-        stations.forEach { s ->
+        val labels = mutableListOf<PendingLabel>()
+        stations.sortedByDescending { it.system.ordinal }.forEach { s ->
             val p = proj.toScreen(s.lat, s.lon)
             if (p.x < -50 || p.y < -50 || p.x > size.width + 50 || p.y > size.height + 50) return@forEach
+            val metro = s.system == TransportSystem.Metro
             val transfer = s.lines.size > 1
-            val r = (if (transfer) 7f else 5f).px(density)
             val selected = s.id == selectedId
-            drawCircle(Color.White, r * if (selected) 1.6f else 1f, p)
-            drawCircle(
-                if (transfer) Color(0xFF222222) else s.lines.first().composeColor,
-                r * if (selected) 1.6f else 1f, p, style = Stroke(2.5f.px(density)),
-            )
-            if (showAllLabels || s.id in highlightIds || selected) {
-                drawLabel(measurer, s.name, p + Offset(r + 4.px(density), -9.px(density)), dark, bold = selected)
+            val r = (if (transfer) 7f else if (metro) 5f else 4f).px(density) * if (selected) 1.6f else 1f
+            val ring = if (transfer) Color(0xFF222222) else s.lines.first().composeColor
+            if (metro) {
+                drawCircle(Color.White, r, p)
+                drawCircle(ring, r, p, style = Stroke(2.5f.px(density)))
+            } else {
+                // Cuadrado redondeado, igual que su insignia de línea.
+                val tl = Offset(p.x - r, p.y - r)
+                val sz = Size(2 * r, 2 * r)
+                val corner = CornerRadius(r * 0.5f)
+                drawRoundRect(Color.White, tl, sz, corner)
+                drawRoundRect(ring, tl, sz, corner, style = Stroke(2f.px(density)))
+            }
+            // Con muchas estaciones de autobús, sus nombres solo aparecen con más zoom.
+            val showLabel = camera.metersPerPx < if (metro) 6f else 2.5f
+            if (showLabel || s.id in highlightIds || selected) {
+                labels += PendingLabel(s.name, p + Offset(r + 4.px(density), -9.px(density)), selected, metro)
+            }
+        }
+
+        // Etiquetas al final y sin encimarse: primero la seleccionada, luego el Metro, luego el resto.
+        val taken = mutableListOf<Rect>()
+        labels.sortedWith(compareByDescending<PendingLabel> { it.selected }.thenByDescending { it.metro }).forEach { l ->
+            val layout = measurer.measure(l.text, labelStyle(dark, l.selected), softWrap = false, maxLines = 1)
+            val rect = Rect(l.at, Size(layout.size.width.toFloat(), layout.size.height.toFloat()))
+            if (taken.none { it.overlaps(rect) }) {
+                taken += rect
+                drawText(layout, topLeft = l.at)
             }
         }
 
@@ -159,14 +188,17 @@ private fun DrawScope.drawLabel(
     dark: Boolean,
     bold: Boolean = false,
 ) {
-    val style = TextStyle(
-        color = if (dark) Color(0xFFEDEDED) else Color(0xFF1B1B1B),
-        fontSize = 12.sp,
-        fontWeight = if (bold) FontWeight.Bold else FontWeight.SemiBold,
-        shadow = androidx.compose.ui.graphics.Shadow(if (dark) Color.Black else Color.White, blurRadius = 6f),
-    )
-    drawText(measurer, text, at, style, softWrap = false, maxLines = 1)
+    drawText(measurer, text, at, labelStyle(dark, bold), softWrap = false, maxLines = 1)
 }
+
+private fun labelStyle(dark: Boolean, bold: Boolean) = TextStyle(
+    color = if (dark) Color(0xFFEDEDED) else Color(0xFF1B1B1B),
+    fontSize = 12.sp,
+    fontWeight = if (bold) FontWeight.Bold else FontWeight.SemiBold,
+    shadow = androidx.compose.ui.graphics.Shadow(if (dark) Color.Black else Color.White, blurRadius = 6f),
+)
+
+private class PendingLabel(val text: String, val at: Offset, val selected: Boolean, val metro: Boolean)
 
 private class Projection(val center: GeoPoint, val metersPerPx: Float, val size: Size, val pan: Offset) {
     private val mPerDegLat = 110_574.0

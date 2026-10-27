@@ -4,6 +4,7 @@ import mx.metroar.cdmx.domain.TestData.line1
 import mx.metroar.cdmx.domain.TestData.origin
 import mx.metroar.cdmx.domain.TestData.station
 import mx.metroar.cdmx.domain.geo.GeoMath
+import mx.metroar.cdmx.domain.model.TransportSystem
 import mx.metroar.cdmx.domain.model.UserLocation
 import mx.metroar.cdmx.domain.usecase.DescribeDirection
 import mx.metroar.cdmx.domain.usecase.FieldOfView
@@ -33,6 +34,18 @@ class FiltersAndSensorsTest {
         assertEquals(listOf("media"), onlyL1.map { it.station.id })
         assertEquals(180.0, all[0].bearing, 0.1)
         assertEquals(3, all[0].walkingMinutes)
+    }
+
+    @Test
+    fun `cercanas filtra por sistema de transporte`() {
+        val stations = listOf(
+            station("metro", GeoMath.destination(origin, 0.0, 300.0)),
+            station("metrobus", GeoMath.destination(origin, 90.0, 200.0), TestData.mb1),
+        )
+        val all = GetNearbyStations()(stations, origin, 1500.0)
+        assertEquals(listOf("metrobus", "metro"), all.map { it.station.id })
+        val onlyMetro = GetNearbyStations()(stations, origin, 1500.0, systems = setOf(TransportSystem.Metro))
+        assertEquals(listOf("metro"), onlyMetro.map { it.station.id })
     }
 
     @Test

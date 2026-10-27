@@ -28,6 +28,7 @@ import mx.metroar.cdmx.domain.model.Favorite
 import mx.metroar.cdmx.domain.model.Line
 import mx.metroar.cdmx.domain.model.SensorAccuracy
 import mx.metroar.cdmx.domain.model.Station
+import mx.metroar.cdmx.domain.model.TransportSystem
 import mx.metroar.cdmx.domain.model.UserLocation
 import mx.metroar.cdmx.domain.repository.FavoritesRepository
 import mx.metroar.cdmx.domain.repository.LocationProvider
@@ -165,7 +166,7 @@ class MainViewModel(
 
     private val nearby: Flow<List<NearbyStation>> = combine(data, anchor, settings.filterNotNull()) { (_, stations), loc, s ->
         if (loc == null) emptyList()
-        else getNearby(stations, loc.point, s.radiusM.toDouble(), s.lineFilter)
+        else getNearby(stations, loc.point, s.radiusM.toDouble(), s.lineFilter, s.enabledSystems)
     }
 
     private val autoMap: Flow<Boolean> = combine(orientation, settings.filterNotNull()) { o, s ->
@@ -252,6 +253,17 @@ class MainViewModel(
 
     fun updateSettings(transform: (UserSettings) -> UserSettings) = viewModelScope.launch {
         settingsRepository.update(transform)
+    }
+
+    /** Activa o apaga un sistema. Al apagarlo se quitan sus líneas del filtro para no dejarlo vacío. */
+    fun toggleSystem(system: TransportSystem) = updateSettings { s ->
+        if (system in s.enabledSystems) {
+            if (s.enabledSystems.size == 1) return@updateSettings s // siempre queda al menos uno
+            val lineIds = uiState.value.lines.filter { it.system == system }.map { it.id }.toSet()
+            s.copy(enabledSystems = s.enabledSystems - system, lineFilter = s.lineFilter - lineIds)
+        } else {
+            s.copy(enabledSystems = s.enabledSystems + system)
+        }
     }
 
     fun toggleLine(lineId: String) = updateSettings { s ->

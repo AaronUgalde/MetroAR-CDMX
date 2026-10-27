@@ -43,11 +43,13 @@ class JsonStationRepository(private val context: Context) : StationRepository {
                 Station(
                     id = s.id,
                     name = s.name,
+                    system = systemOf(s.system),
                     lat = s.lat,
                     lon = s.lon,
                     lines = s.lineIds.mapNotNull { byId[it] },
                     accessible = s.accessible,
                     entrances = s.entrances.map { Entrance(it.id, s.id, it.lat, it.lon, it.name, it.hasElevator) },
+                    connectionIds = s.connections,
                 )
             }
             return lines to stations
@@ -59,10 +61,13 @@ class JsonStationRepository(private val context: Context) : StationRepository {
             shortName = shortName,
             color = parseColor(color),
             textColor = parseColor(textColor),
-            system = runCatching { TransportSystem.valueOf(system) }.getOrDefault(TransportSystem.Metro),
+            system = systemOf(system),
             terminals = terminals,
             stationIds = stationIds,
         )
+
+        private fun systemOf(name: String) =
+            TransportSystem.entries.firstOrNull { it.name == name } ?: TransportSystem.Metro
 
         private fun parseColor(hex: String): Long = 0xFF000000 or hex.removePrefix("#").toLong(16)
     }
@@ -91,9 +96,11 @@ private class LineDto(
 private class StationDto(
     val id: String,
     val name: String,
+    val system: String = "Metro",
     val lat: Double,
     val lon: Double,
     val lineIds: List<String>,
+    val connections: List<String> = emptyList(),
     val accessible: Boolean = false,
     val entrances: List<EntranceDto> = emptyList(),
 )
