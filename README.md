@@ -1,78 +1,147 @@
+<div align="center">
+
+<img src="docs/icon.svg" alt="MetroAR CDMX icon" width="96" height="96" />
+
 # MetroAR CDMX
 
-Android augmented reality app: point the camera around you and see markers floating in the real direction of the nearest Metro stations, with each one's line (official color + number), distance and walking minutes.
+**Point your phone around you and see which way to walk to the nearest Mexico City Metro station.**
 
-> Independent project, not affiliated with the Sistema de Transporte Colectivo. It doesn't use official logos or trademarks.
+Augmented reality markers float in the real direction of each station, with its official line color and number, distance, and walking time. It also works offline.
 
-## What's included (MVP 1.0 + parts of phase 2)
+[![Android CI](https://github.com/AaronUgalde/MetroAR-CDMX/actions/workflows/android.yml/badge.svg)](https://github.com/AaronUgalde/MetroAR-CDMX/actions/workflows/android.yml)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.4-7F52FF?logo=kotlin&logoColor=white)
+![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
+![Min SDK](https://img.shields.io/badge/minSdk-26%20(Android%208.0)-3DDC84?logo=android&logoColor=white)
+![Tests](https://img.shields.io/badge/unit%20tests-33%20passing-2EA043)
+![Offline](https://img.shields.io/badge/works-offline-E8590C)
 
-| Feature | Status |
-|---|---|
-| Camera view with markers in their real direction | ✅ |
-| Line color and number, distance and minutes (80 m/min) | ✅ |
-| Scaling and opacity by distance | ✅ |
-| Off-screen arrows (left/right) | ✅ |
-| No more than 8 markers; stacking and "+N" grouping | ✅ |
-| Station sheet: lines, transfers, accessibility, hours, "Llévame ahí", favorite | ✅ |
-| 2D offline map (no API keys): lines, stations, position, direction cone, radius | ✅ |
-| Switches to map automatically when the phone lies flat | ✅ |
-| Offline data (GTFS packaged in `assets/stations.json`) | ✅ |
-| Compass and GPS accuracy indicator (green/yellow/red + text) | ✅ |
-| Figure-8 calibration notice | ✅ |
-| Walking navigation with an arrow, distance remaining and vibration on arrival | ✅ (to the station's center) |
-| Line and radius filters, favorites | ✅ |
-| Voice mode ("Estación Allende, 200 metros al frente") | ✅ |
-| Dark mode | ✅ (follows the system) |
-| 3-screen onboarding + permissions with explanations | ✅ |
-| Multiple entrances per station, English, other transit systems, alerts | ⏳ phases 2–3 |
+[Features](#features) · [Screenshots](#screenshots) · [How it works](#how-it-works) · [Getting started](#getting-started) · [Architecture](#architecture) · [Roadmap](#roadmap)
+
+</div>
+
+---
+
+## Why
+
+When you walk out of a museum or a meeting in a part of the city you don't know, a 2D map makes you work out which way north is first. MetroAR skips that step: turn the phone and the station is right there in front of you.
+
+| Who | What they need | Example |
+|---|---|---|
+| 🧳 Tourists | Get oriented without reading a map or asking anyone | Leaving a museum downtown and looking for the closest station |
+| 🏘️ Residents in a new area | Find alternatives to their usual route | A meeting in an unfamiliar neighborhood |
+| 🎒 Students and workers | Save time between activities | "Should I take Line 3 or Line 7?" |
+| ♿ People with reduced mobility | Know which stations are accessible | Show only accessible stations |
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/ar-view.jpg" width="200" alt="AR camera view with station markers" /><br/><sub><b>AR view</b></sub></td>
+    <td align="center"><img src="docs/screenshots/station-sheet.jpg" width="200" alt="Station details sheet" /><br/><sub><b>Station sheet</b></sub></td>
+    <td align="center"><img src="docs/screenshots/navigation.jpg" width="200" alt="Walking navigation arrow" /><br/><sub><b>Walking navigation</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/map.jpg" width="200" alt="Offline 2D map with lines and stations" /><br/><sub><b>Offline map</b></sub></td>
+    <td align="center"><img src="docs/screenshots/filters.jpg" width="200" alt="Line and radius filters" /><br/><sub><b>Filters</b></sub></td>
+    <td align="center"><img src="docs/screenshots/onboarding.jpg" width="200" alt="Onboarding screen" /><br/><sub><b>Onboarding</b></sub></td>
+  </tr>
+</table>
+
+<sub>Captured on the Android emulator with a simulated location next to Allende station (Line 2), in the historic center.</sub>
+
+## Features
+
+**Augmented reality**
+- 📍 Markers placed in the **real direction** of every station within a configurable radius (1.5 km by default).
+- 🎨 Official line **color plus number** on every marker, so you don't need to tell colors apart.
+- 📏 Distance and walking minutes (estimated at 80 m/min), with nearer stations shown larger and more opaque.
+- ↔️ Arrows on the edges of the screen for stations behind you or off to the side.
+- 🧹 No more than 8 markers at once. Markers that would overlap are stacked or grouped as "+N".
+
+**Getting there**
+- 🧭 **Take me there**: a large arrow, remaining distance, and a vibration when you arrive.
+- 🗺️ **Offline 2D map** with the lines drawn in their colors, your position, a direction cone, and the search radius. It needs no API keys.
+- 📱 Switches to the map automatically when you lay the phone flat.
+- 🚶 Opens the walking route in Google Maps if you want turn-by-turn directions.
+
+**Comfort and accessibility**
+- 🔊 Voice mode: *"Estación Allende, 200 metros al frente"*.
+- ⭐ Favorites, plus filters by line and radius.
+- 🟢 GPS and compass accuracy indicators (green/yellow/red, always with a text label).
+- ♾️ A figure-8 calibration prompt when the compass gets unreliable.
+- 🌙 Dark mode, screen reader labels, and minimum 4.5:1 contrast.
+- ⚠️ A visible reminder not to walk while looking at the phone.
+
+**Privacy first**
+- 🔒 Everything is computed on the device. Your location never leaves the phone and the camera never records.
+- 📴 Station data ships inside the app, so it works without a connection.
+
+> The UI is in Spanish (es‑MX). English is planned; see the [roadmap](#roadmap).
 
 ## How it works
 
-For each frame: `α = θstation − θphone` (normalized to [−180°, 180°)), `x = W/2 + α/(FOV/2)·W/2`. The Y coordinate comes from the camera's elevation, so markers sit above the horizon.
+Each frame, a marker's position comes from comparing two headings: the bearing from you to the station, and the direction the camera is pointing.
 
-- **Heading**: the `Rotation Vector` sensor (fallback: accelerometer + magnetometer). The heading comes directly from the camera vector (−Z of the device) in the rotation matrix, so it works with the phone upright or tilted without `remapCoordinateSystem`.
-- **Magnetic declination**: `GeomagneticField` (≈ +4.5° in CDMX).
-- **Smoothing**: exponential on sine/cosine (no 359°→0° jump).
-- **Real FOV**: focal length and sensor size via Camera2, adjusted for the preview crop (`FILL_CENTER`).
-- **GPS**: Fused Location Provider; readings worse than 30 m are ignored unless there's nothing better. Nearby stations are recalculated only after moving more than 20 m. Frequency drops when you're standing still. If Play Services sends nothing within 8 s, the app uses `LocationManager`.
-- Camera and sensors only run while the screen is visible.
+$$
+\alpha = \theta_{\text{station}} - \theta_{\text{phone}} \quad\text{(normalized to } [-180^\circ, 180^\circ)\text{)}, \qquad
+x = \frac{W}{2} + \frac{\alpha}{\text{FOV}/2}\cdot\frac{W}{2}
+$$
 
-## Architecture
-
-Clean Architecture + MVVM. The domain layer is pure Kotlin (no Android) and is tested with plain JUnit.
-
+```mermaid
+flowchart LR
+    GPS[📡 Fused location] --> F[Accuracy filter<br/>under 30 m]
+    F --> N[Nearby stations<br/>Haversine + bearing<br/>recomputed every 20 m]
+    RV[🧭 Rotation Vector] --> D[+ Magnetic declination<br/>≈ 4.5° E in CDMX]
+    D --> S[Circular smoothing<br/>sin/cos EMA]
+    CAM[📷 Camera2 optics] --> FOV[Real field of view]
+    N --> P[ProjectToScreen]
+    S --> P
+    FOV --> P
+    P --> UI[Markers · edge arrows<br/>stacking/grouping]
 ```
-domain/      models, GeoMath (Haversine, bearing), ProjectToScreen, SmoothHeading,
-             OrientationMath, FieldOfView, LocationFilter, GetNearbyStations
-data/        JSON repository, fused location, Rotation Vector, DataStore (favorites/settings)
-presentation/MainViewModel: combines location + orientation flows and exposes positioned markers
-ui/          Compose: CameraX, AR overlay, Canvas map, sheets, onboarding, settings
-```
 
-Dependency injection is manual (`AppContainer` in `MetroArApp.kt`), and data lives in JSON + DataStore rather than Room. With ~160 stations a database isn't worth it, and this avoids KSP/Hilt. Migrating to Hilt/Room is mechanical if you ever need it.
+| Challenge | Cause | Solution in the code |
+|---|---|---|
+| Noisy compass (10°–30° error) | Buildings, cars, magnetic cases | Rotation Vector sensor, accuracy tracking, figure-8 calibration prompt |
+| Jittery markers | 60 Hz sensor noise | Exponential smoothing on sine/cosine, so 359° → 0° never spins |
+| GPS drift between tall buildings | Urban canyon effect | Fused location; readings worse than 30 m are ignored unless nothing better exists |
+| Phone held upright or flat | Sensor axes change | Heading read straight from the camera vector (−Z) of the rotation matrix |
+| Each phone has a different lens | Different focal length | Real FOV from Camera2, corrected for the preview crop |
+| Stations in the same direction | Overlapping markers | Sort by distance, stack in 3 levels, then group |
+| Battery | Camera + GPS + sensors | Everything pauses off-screen, and GPS rate drops when you stand still |
+| No Google Play Services | GMS missing or crashed | Falls back to `LocationManager` after 8 s |
 
-## Data
+## Getting started
 
-`tools/build-stations.mjs` downloads the static GTFS from the [CDMX Open Data Portal](https://datos.cdmx.gob.mx), keeps only Metro (`agency_id = METRO`), merges platforms with the same name into transfer stations, and saves the station order for each line.
+### Prerequisites
+
+- [Android Studio](https://developer.android.com/studio) (includes JDK 17+ and the Android SDK; the project compiles against SDK 37).
+- An Android 8.0+ phone with a compass for the full experience. The emulator works too.
+
+### Build and run
 
 ```bash
-node tools/build-stations.mjs
-```
-
-Current result: 12 lines, 163 stations, 28 with transfers. The `update-stations.yml` workflow runs it every month and opens a PR if anything changed.
-
-## Building
-
-Requires Android Studio (JDK 17+ and SDK 37).
-
-```bash
-./gradlew :app:testDebugUnitTest   # 33 unit tests (domain + ViewModel)
+git clone https://github.com/AaronUgalde/MetroAR-CDMX.git
+cd MetroAR-CDMX
 ./gradlew :app:assembleDebug
 ```
 
-### Testing in the emulator
+Or open the folder in Android Studio and press **▶ Run**.
 
-Start the emulator with `-camera-back virtualscene` and simulate location:
+<details>
+<summary><b>📱 Run on a physical phone</b></summary>
+
+1. On the phone: **Settings → About phone → tap _Build number_ 7 times**.
+2. **Settings → System → Developer options →** turn on **USB debugging** (or **Wireless debugging**).
+3. Connect it with a data-capable USB cable and accept the debugging prompt, or pair over Wi‑Fi from *Android Studio → Device Manager → Pair devices using Wi‑Fi*.
+4. Select the phone in Android Studio and press **▶ Run**. The app stays installed afterwards.
+
+</details>
+
+<details>
+<summary><b>🖥️ Run on the emulator with a simulated location</b></summary>
+
+Start the AVD with a virtual camera scene (`-camera-back virtualscene`), then inject a location:
 
 ```bash
 adb shell cmd location providers add-test-provider gps
@@ -80,14 +149,123 @@ adb shell cmd location providers set-test-provider-enabled gps true
 adb shell cmd location providers set-test-provider-location gps --location 19.4340,-99.1372 --accuracy 6
 ```
 
+</details>
+
+### Tests
+
+```bash
+./gradlew :app:testDebugUnitTest
+```
+
+There are 33 unit tests covering Haversine, bearing, angle normalization, screen projection, stacking and grouping, heading smoothing, rotation matrices, FOV, the GPS filter, and the ViewModel (with fake location and orientation flows via [Turbine](https://github.com/cashapp/turbine)). One known case: from the Zócalo toward Bellas Artes, the bearing must point roughly west.
+
+## Architecture
+
+Clean Architecture with MVVM. The domain layer is **pure Kotlin with no Android dependencies**, so all the positioning math can be tested without a camera or a phone.
+
+```mermaid
+flowchart TB
+    subgraph UI["ui/ · Jetpack Compose"]
+        AR[ArOverlay + CameraX]
+        MAP[StationMap · Canvas]
+        SHEETS[Station / filter sheets]
+    end
+    subgraph P["presentation/"]
+        VM[MainViewModel<br/>combines Flows → positioned markers]
+    end
+    subgraph D["domain/ · pure Kotlin"]
+        UC[GetNearbyStations · ProjectToScreen<br/>SmoothHeading · OrientationMath<br/>FieldOfView · LocationFilter]
+        GEO[GeoMath]
+    end
+    subgraph DATA["data/"]
+        REPO[JsonStationRepository]
+        LOC[FusedLocationProvider]
+        ORI[RotationVectorOrientationProvider]
+        PREF[DataStore · favorites & settings]
+    end
+    UI --> VM --> UC --> GEO
+    VM --> REPO & LOC & ORI & PREF
+```
+
+<details>
+<summary><b>Project structure</b></summary>
+
+```
+app/src/main/
+├── assets/stations.json        # generated from the CDMX GTFS
+└── java/mx/metroar/cdmx/
+    ├── domain/                 # models, math, use cases, repository interfaces
+    ├── data/                   # JSON, location, sensors, DataStore
+    ├── presentation/           # MainViewModel
+    └── ui/                     # ar/, map/, components/, theme/, screens
+tools/build-stations.mjs        # GTFS → stations.json
+.github/workflows/              # CI + monthly data update
+```
+
+</details>
+
+### Tech stack
+
+| Area | Technology |
+|---|---|
+| Language | Kotlin 2.4 |
+| UI | Jetpack Compose · Material 3 |
+| Camera | CameraX + Camera2 interop (real FOV) |
+| Sensors | `SensorManager` · Rotation Vector · `GeomagneticField` |
+| Location | Fused Location Provider, with a `LocationManager` fallback |
+| Async | Coroutines + Flow |
+| Storage | Bundled JSON (kotlinx.serialization) · DataStore |
+| DI | Manual (`AppContainer`) |
+| Tests | JUnit 4 · kotlinx-coroutines-test · Turbine |
+| CI/CD | GitHub Actions |
+
+> **Why no Hilt or Room?** With about 160 stations, a bundled JSON file and a linear scan are faster and simpler than a database, and manual DI keeps the build free of KSP. Migrating later is mechanical.
+
+## Data
+
+Stations, lines, and colors come from the **static GTFS** published on the [Mexico City Open Data Portal](https://datos.cdmx.gob.mx). The script keeps only Metro routes, merges same-name platforms into transfer stations, and stores the station order for each line.
+
+```bash
+node tools/build-stations.mjs          # downloads the latest GTFS
+```
+
+**Current dataset:** 12 lines · 163 stations · 28 transfer stations.
+
+A [scheduled workflow](.github/workflows/update-stations.yml) re-runs the script on the 1st of each month and opens a pull request if anything changed.
+
+## Roadmap
+
+- [x] AR markers with distance, walking time, scaling, and edge arrows
+- [x] Station sheet, favorites, and line/radius filters
+- [x] Offline 2D map with automatic switching
+- [x] Walking navigation to the station, with arrival vibration
+- [x] Voice mode, dark mode, and accessibility labels
+- [ ] Individual station entrances (navigate to the nearest entrance)
+- [ ] English translation
+- [ ] Metrobús, Tren Ligero, Cablebús, Trolebús, and Ecobici
+- [ ] Accessibility details (elevators, ramps, tactile guidance)
+- [ ] Service alerts and closed stations
+- [ ] Home screen widget with the nearest station
+- [ ] Optional high-precision mode with ARCore Geospatial API
+- [ ] Compose UI tests and field measurements of angular error
+
 ## Privacy
 
-Camera and location are used only while the app is open. Everything is computed on the device; neither the location nor the images leave the phone. There's no analytics.
+The app requests **camera** and **while-in-use location** only, each with an explanation, and never background location. Everything is computed on the device: no location is sent or stored off the phone, camera frames are never recorded, and there is no analytics.
 
-## Next steps
+## Acknowledgments
 
-- Coordinates for each entrance (geographic layers of the same portal / OpenStreetMap) and navigation to the nearest entrance.
-- English strings (`values-en`).
-- Metrobús, Tren Ligero, Cablebús, Trolebús (same GTFS, change `AGENCY` in the script).
-- Optional ARCore Geospatial mode.
-- Compose UI tests and a field log of angular error.
+- Station data: [Portal de Datos Abiertos de la Ciudad de México](https://datos.cdmx.gob.mx) (static GTFS).
+- General service hours as published by the STC.
+
+> **Disclaimer:** MetroAR CDMX is an independent project and is not affiliated with or endorsed by the Sistema de Transporte Colectivo (STC) Metro. It doesn't use official logos or trademarks. Open data may contain errors, so always confirm on site.
+
+## License
+
+No license has been chosen yet. Until one is added, all rights are reserved by the author.
+
+---
+
+<div align="center">
+<sub>Built by <a href="https://github.com/AaronUgalde">Aaron Ugalde</a> · Made for CDMX 🇲🇽</sub>
+</div>
